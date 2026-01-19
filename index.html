@@ -3,16 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Navigator – Task HTML Converter – Restored Style</title>
+<title>Navigator – Task HTML Converter</title>
 <style>
-  :root {
-    --blue:#0B4E87;
-    --text:#333333;
-    --shadow:0 8px 24px rgba(0,0,0,.12);
-    --accent1:#FFC400; --accent2:#2EB872; --accent3:#E0007A; --accent4:#00A1C6;
-    --note:#0B74C9; --important:#C9362B; --highlight:#FFF6BF;
-    --font:'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
-  }
+  :root { --blue:#0B4E87; --text:#333333; --shadow:0 8px 24px rgba(0,0,0,.12);
+          --accent1:#FFC400; --accent2:#2EB872; --accent3:#E0007A; --accent4:#00A1C6; --note:#0B74C9; --important:#C9362B; --highlight:#FFF6BF; --font:'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; }
   html, body {height:100%;}
   body {margin:0; font-family:var(--font); background:#f4f6f8; color:var(--text);}  
   .wrap {max-width:1200px; margin:40px auto; padding:0 16px;}
@@ -35,7 +29,7 @@
   .footer-actions {display:flex; gap:12px;}
   .preview-box {padding:16px;}
 
-  /* Preview card styles */
+  /* Preview styles for the builder (not relied upon in exported snippet) */
   .subheading {font-weight:700; color:#1f2a44; margin-top:18px; margin-bottom:8px;}
   .divider {height:1px; background:#e8eaec; margin:12px 0;}
   .callout {border-left:4px solid var(--note); background:#f6fbff; padding:12px 14px; border-radius:8px; margin:12px 0;}
@@ -48,7 +42,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="app-title">Navigator – Task HTML Converter <span class="badge">for K2</span></div>
+  <div class="app-title">Navigator – Task HTML Converter </div>
 
   <div class="grid">
     <div class="panel">
@@ -103,18 +97,18 @@
     </div>
   </div>
 
+  <!-- Output Panel -->
   <div class="panel" style="margin-top:24px;">
-    <h3>Generated HTML (snippet for K2)</h3>
+    <h3>Generated HTML</h3>
     <div class="inner">
       <textarea id="output" class="code" spellcheck="false"></textarea>
       <div class="footer-actions">
         <button class="btn" onclick="copyOutput()">Copy to clipboard</button>
         <button class="btn" onclick="downloadSnippet()">Download .html</button>
       </div>
-      <p class="hint">Snippet excludes <code>&lt;html&gt;</code>/<code>&lt;head&gt;</code>/<code>&lt;body&gt;</code>. Paste straight into K2.</p>
-    </div>
   </div>
 
+  <!-- Settings Panel -->
   <div class="panel" style="margin-top:24px;">
     <h3>Settings</h3>
     <div class="inner">
@@ -129,7 +123,7 @@
         <div><label>Accent 4 (teal)</label><input type="color" id="accent4" value="#00A1C6" /></div>
         <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:8px;">
           <input type="checkbox" id="includeStyle" checked />
-          <label for="includeStyle">Include a small <code>&lt;style&gt;</code> block. Uncheck to force inline-only styles.</label>
+          <label for="includeStyle">Include a small <code>&lt;style&gt;</code> block (used for live preview only; export inlines critical styles anyway).</label>
         </div>
       </div>
       <div class="footer-actions" style="margin-top:12px;">
@@ -142,7 +136,7 @@
 
 <script>
 function formatBlock(tag){ document.execCommand('formatBlock', false, tag); }
-function createLink(){ const url = prompt('Enter URL:'); if(url){ document.execCommand('createLink', false, url);} }
+function createLink(){ const url=prompt('Enter URL:'); if(url){ document.execCommand('createLink', false, url);} }
 function wrapSelection(startTag, endTag){ const sel=window.getSelection(); if(!sel||sel.rangeCount===0) return; const range=sel.getRangeAt(0); const frag=range.extractContents(); const wrapper=document.createElement('span'); wrapper.innerHTML=startTag+frag.textContent+endTag; range.insertNode(wrapper);} 
 function insertCallout(important=false){ const div=document.createElement('div'); div.className=important?'callout callout-important':'callout'; div.innerHTML=important?'<strong>Important:</strong> Replace with your message.':'<strong>Note:</strong> Replace with your note.'; insertNode(div);} 
 function insertActionList(){ const ol=document.createElement('ol'); ol.className='action-list'; ol.innerHTML='<li>First action</li><li>Second action</li><li>Third action</li>'; insertNode(ol);} 
@@ -167,50 +161,138 @@ function buildHeader(title, pal){
 
 function normaliseContent(html){ html=html.replace(/contenteditable=\"true\"/g,''); html=html.replace(/<b>/g,'<strong>').replace(/<\/b>/g,'<\/strong>'); html=html.replace(/<i>/g,'<em>').replace(/<\/i>/g,'<\/em>'); return html; }
 
+// Build selected sections (Guidance numbered, Evidence bullets)
 function getSectionSelections(){ return { purpose:document.getElementById('secPurpose').checked, guidance:document.getElementById('secGuidance').checked, evidence:document.getElementById('secEvidence').checked, links:document.getElementById('secLinks').checked }; }
-function buildSectionsHTML(sel){
-  let parts=[];
-  if(sel.purpose){ parts.push('<div class="subheading">Purpose</div>'); parts.push('<p>State the purpose of this task clearly and concisely — what outcome is required and why it matters.</p>'); }
-  if(sel.guidance){ parts.push('<div class="subheading">Guidance</div>'); parts.push('\n      <ol class="action-list">\n        <li>Provide step-by-step actions or standards to follow.</li>\n        <li>Clarify responsibilities and any timing expectations.</li>\n        <li>Use plain language and keep it actionable.</li>\n      </ol>'); parts.push('<div class="callout"><strong>Note:</strong> If steps differ by site type, add a short subheading for each variant.</div>'); }
-  if(sel.evidence){ parts.push('<div class="subheading">Evidence to Attach</div>'); parts.push('<ul>\n      <li>Upload supporting documents (e.g., supplier confirmation, reports, or photos).</li>\n      <li>Ensure filenames are descriptive and include date (YYYY-MM-DD).</li>\n      <li>Confirm evidence aligns to this task (no unrelated attachments).</li>\n    </ul>'); parts.push('<div class="callout callout-important"><strong>Important:</strong> Remove any personal data that is not required for this task.</div>'); }
-  if(sel.links){ parts.push('<div class="subheading">Useful Links</div>'); parts.push('<ul>\n      <li><a href="#">Policy / SOP</a></li>\n      <li><a href="#">Template or checklist</a></li>\n      <li><a href="#">Training or how-to</a></li>\n    </ul>'); }
-  return parts.join('');
-}
-function buildSectionsIntoEditor(replace){ const sel=getSectionSelections(); const h=buildSectionsHTML(sel); const editor=document.getElementById('editor'); if(replace){ editor.innerHTML=h; } else { editor.insertAdjacentHTML('beforeend', h);} generateHTML(); }
+function buildSectionsHTML(sel){ let parts=[]; if(sel.purpose){ parts.push('<div class="subheading">Purpose</div>'); parts.push('<p>State the purpose of this task clearly and concisely — what outcome is required and why it matters.</p>'); } if(sel.guidance){ parts.push('<div class="subheading">Guidance</div>'); parts.push('<ol class="action-list"><li>Provide step-by-step actions or standards to follow.</li><li>Clarify responsibilities and any timing expectations.</li><li>Use plain language and keep it actionable.</li></ol>'); parts.push('<div class="callout"><strong>Note:</strong> If steps differ by site type, add a short subheading for each variant.</div>'); } if(sel.evidence){ parts.push('<div class="subheading">Evidence to Attach</div>'); parts.push('<ul><li>Upload supporting documents (e.g., supplier confirmation, reports, or photos).</li><li>Ensure filenames are descriptive and include date (YYYY-MM-DD).</li><li>Confirm evidence aligns to this task (no unrelated attachments).</li></ul>'); parts.push('<div class="callout callout-important"><strong>Important:</strong> Remove any personal data that is not required for this task.</div>'); } if(sel.links){ parts.push('<div class="subheading">Useful Links</div>'); parts.push('<ul><li><a href="#">Policy / SOP</a></li><li><a href="#">Template or checklist</a></li><li><a href="#">Training or how-to</a></li></ul>'); } return parts.join(''); }
+function buildSectionsIntoEditor(replace){ const sel=getSectionSelections(); const html=buildSectionsHTML(sel); const editor=document.getElementById('editor'); if(replace){ editor.innerHTML=html; } else { editor.insertAdjacentHTML('beforeend', html);} generateHTML(); }
 
-function addInlineMarkers(html){
-  const container=document.createElement('div'); container.innerHTML=html;
-  const lists=container.querySelectorAll('ol.action-list');
-  lists.forEach((ol)=>{ let i=1; ol.querySelectorAll('li').forEach((li)=>{ if(li.querySelector('span._marker')) return; const marker=document.createElement('span'); marker.className='_marker'; marker.textContent=i++; marker.setAttribute('style','display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;height:28px;line-height:28px;text-align:center;color:#fff;background:'+ currentPalette().blue +';border-radius:50%;font-weight:700;margin-right:10px;'); li.insertBefore(marker, li.firstChild); }); });
-  return container.innerHTML;
+// Inline fallback for action markers when CSS is stripped
+function addInlineMarkers(root){
+  const lists = root.querySelectorAll('ol.action-list');
+  lists.forEach((ol)=>{
+    let i=1;
+    ol.querySelectorAll('li').forEach((li)=>{
+      if(li.querySelector('span._marker')) return;
+      const marker=document.createElement('span');
+      marker.className='_marker';
+      marker.textContent=i++;
+      marker.setAttribute('style','display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;height:28px;line-height:28px;text-align:center;color:#fff;background:'+ currentPalette().blue +';border-radius:50%;font-weight:700;margin-right:10px;');
+      li.insertBefore(marker, li.firstChild);
+      li.style.display='flex'; li.style.alignItems='flex-start'; li.style.gap='10px'; li.style.margin='10px 0';
+    });
+    ol.style.listStyle='none'; ol.style.paddingLeft='0'; ol.style.margin='14px 0';
+  });
+}
+
+// NEW: Inline critical styles so K2 renders exactly like the preview
+function inlineCriticalStyles(html){
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+
+  // Header/Accent inline styles are already inline via buildHeader()
+
+  // Subheadings -> inline bold + colour + margins
+  wrapper.querySelectorAll('.subheading').forEach(el=>{
+    el.style.fontWeight='700';
+    el.style.color='#1f2a44';
+    el.style.marginTop='18px';
+    el.style.marginBottom='8px';
+    el.classList.remove('subheading');
+  });
+
+  // Divider -> inline rule
+  wrapper.querySelectorAll('.divider').forEach(el=>{
+    el.style.height='1px';
+    el.style.background='#e8eaec';
+    el.style.margin='12px 0';
+    el.classList.remove('divider');
+  });
+
+  // Callouts -> inline backgrounds/borders
+  wrapper.querySelectorAll('.callout').forEach(el=>{
+    el.style.borderLeft='4px solid #0B74C9';
+    el.style.background='#f6fbff';
+    el.style.padding='12px 14px';
+    el.style.borderRadius='8px';
+    el.style.margin='12px 0';
+  });
+  wrapper.querySelectorAll('.callout-important').forEach(el=>{
+    el.style.borderLeftColor='#C9362B';
+    el.style.background='#fff5f5';
+    el.classList.remove('callout-important');
+  });
+
+  // Highlight -> inline background
+  wrapper.querySelectorAll('span.highlight').forEach(el=>{
+    el.style.background='#FFF6BF';
+    el.style.padding='2px 4px';
+    el.style.borderRadius='4px';
+    el.classList.remove('highlight');
+  });
+
+  // Action list pseudo markers cannot be exported as ::before; add inline markers
+  addInlineMarkers(wrapper);
+
+  return wrapper.innerHTML;
 }
 
 function generateHTML(){
   const title=document.getElementById('titleText').value||'Navigator';
   const pal=currentPalette();
   const width=document.getElementById('containerWidth').value||'100%';
-  const includeStyle=document.getElementById('includeStyle').checked;
-  let editorHtml=normaliseContent(document.getElementById('editor').innerHTML);
-  if(!includeStyle){ editorHtml=addInlineMarkers(editorHtml); }
-  const header=buildHeader(title, pal);
-  const body='<div style="background:#fff;border-radius:0 0 12px 12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:20px;">'+editorHtml+'</div>';
-  const container='<div style="font-family:'+"'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif"+';color:'+pal.text+';max-width:'+width+';">'+header+body+'</div>';
-  let styleBlock='';
-  if(includeStyle){ styleBlock='<style>.callout{border-left:4px solid #0B74C9;background:#f6fbff;padding:12px 14px;border-radius:8px;margin:12px 0;}.callout.callout-important{border-left-color:#C9362B;background:#fff5f5;}.highlight{background:#FFF6BF;padding:2px 4px;border-radius:4px;}.action-list{counter-reset:item;list-style:none;padding-left:0;margin:14px 0;}.action-list li{display:flex;align-items:flex-start;gap:10px;margin:10px 0;}.action-list li::before{counter-increment:item;content:counter(item);flex:0 0 28px;height:28px;line-height:28px;text-align:center;color:#fff;background:'+ pal.blue +';border-radius:50%;font-weight:700;}.subheading{font-weight:700;color:#1f2a44;margin-top:18px;margin-bottom:8px;}.divider{height:1px;background:#e8eaec;margin:12px 0;}</style>'; }
-  const snippet = styleBlock + container;
-  document.getElementById('output').value=snippet;
-  document.getElementById('preview').innerHTML=container;
+  const includeStyle=document.getElementById('includeStyle').checked; // used for preview only
+
+  // Editor HTML -> inline critical styles for export
+  const rawHtml = document.getElementById('editor').innerHTML;
+  const exportInner = inlineCriticalStyles(normaliseContent(rawHtml));
+
+  // Header + body container
+  const header = buildHeader(title, pal);
+  const body   = '<div style="background:#fff;border-radius:0 0 12px 12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:20px;">'+exportInner+'</div>';
+  const container = '<div style="font-family:'+"'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif"+';color:'+pal.text+';max-width:'+width+';">'+header+body+'</div>';
+
+  // Live preview uses authored classes (nice while editing)
+  let previewInner = normaliseContent(document.getElementById('editor').innerHTML);
+  const previewContainer = '<div style="font-family:'+"'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif"+';color:'+pal.text+';max-width:'+width+';">'+header+'<div style="background:#fff;border-radius:0 0 12px 12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:20px;">'+previewInner+'</div></div>';
+
+  // Output snippet = fragment with inline-critical styles
+  document.getElementById('output').value = container;
+  document.getElementById('preview').innerHTML = previewContainer; 
 }
 
 function copyOutput(){ const ta=document.getElementById('output'); ta.select(); document.execCommand('copy'); }
-function downloadSnippet(){ const blob=new Blob([document.getElementById('output').value], {type:'text/html'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='navigator-task-html-converter.html'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function downloadSnippet(){ const blob=new Blob([document.getElementById('output').value], {type: 'text/html'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='navigator-task-snippet.html'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
 
-window.addEventListener('DOMContentLoaded', ()=>{
-  document.getElementById('secPurpose').checked=true;
-  document.getElementById('secGuidance').checked=true;
-  document.getElementById('secEvidence').checked=true;
-  document.getElementById('secLinks').checked=true;
-  buildSectionsIntoEditor(true);
+// Default content using your structure
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('editor').innerHTML = `
+    <div class="subheading">Purpose</div>
+    <p>State the purpose of this task clearly and concisely — what outcome is required and why it matters.</p>
+
+    <div class="subheading">Guidance</div>
+    <ol class="action-list">
+      <li>Provide step-by-step actions or standards to follow.</li>
+      <li>Clarify responsibilities and any timing expectations.</li>
+      <li>Use plain language and keep it actionable.</li>
+    </ol>
+    <div class="callout"><strong>Note:</strong> If steps differ by site type, add a short subheading for each variant.</div>
+
+    <div class="subheading">Evidence to Attach</div>
+    <ul>
+      <li>Upload supporting documents (e.g., supplier confirmation, reports, or photos).</li>
+      <li>Ensure filenames are descriptive and include date (YYYY-MM-DD).</li>
+      <li>Confirm evidence aligns to this task (no unrelated attachments).</li>
+    </ul>
+    <div class="callout callout-important"><strong>Important:</strong> Remove any personal data that is not required for this task.</div>
+
+    <div class="subheading">Useful Links</div>
+    <ul>
+      <li><a href="#">Policy / SOP</a></li>
+      <li><a href="#">Template or checklist</a></li>
+      <li><a href="#">Training or how-to</a></li>
+    </ul>
+  `;
+  generateHTML();
 });
 </script>
 </body>
