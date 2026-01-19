@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Navigator – Task HTML Converter – Restored Style</title>
+<style>
+  :root {
+    --blue:#0B4E87;
+    --text:#333333;
+    --shadow:0 8px 24px rgba(0,0,0,.12);
+    --accent1:#FFC400; --accent2:#2EB872; --accent3:#E0007A; --accent4:#00A1C6;
+    --note:#0B74C9; --important:#C9362B; --highlight:#FFF6BF;
+    --font:'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+  }
+  html, body {height:100%;}
+  body {margin:0; font-family:var(--font); background:#f4f6f8; color:var(--text);}  
+  .wrap {max-width:1200px; margin:40px auto; padding:0 16px;}
+  .app-title {font-weight:700; font-size:24px; letter-spacing:.2px; color:var(--blue); margin-bottom:12px;}
+  .hint {color:#5b6770; font-size:13px; margin-bottom:24px;}
+  .grid {display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items:start;}
+  .panel {background:#fff; border-radius:12px; box-shadow:var(--shadow);}  
+  .panel h3 {margin:0; padding:14px 16px; border-bottom:1px solid #e8eaec; font-size:16px;}
+  .panel .inner {padding:16px;}
+  .toolbar {display:flex; flex-wrap:wrap; gap:8px; padding:8px; border-bottom:1px solid #e8eaec;}
+  .btn {appearance:none; border:1px solid #d0d7de; border-radius:8px; background:#fff; padding:8px 10px; font-size:13px; cursor:pointer;}
+  .btn:hover {background:#f5f7fa;}
+  .editor {min-height:280px; padding:16px; outline:none;}
+  .editor:empty:before {content:'Type or paste your task content here…'; color:#9aa3ab;}
+  .code {width:100%; min-height:180px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:12px;}
+  .badge {display:inline-block; padding:2px 8px; border-radius:999px; background:#edf2ff; color:#244; font-size:12px; border:1px solid #d0d7de;}
+  .settings {display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .settings label {font-size:12px; color:#5b6770;}
+  .settings input[type="text"], .settings input[type="color"], .settings select {width:100%; padding:8px; border:1px solid #ccd3da; border-radius:8px;}
+  .footer-actions {display:flex; gap:12px;}
+  .preview-box {padding:16px;}
+
+  /* Preview card styles */
+  .subheading {font-weight:700; color:#1f2a44; margin-top:18px; margin-bottom:8px;}
+  .divider {height:1px; background:#e8eaec; margin:12px 0;}
+  .callout {border-left:4px solid var(--note); background:#f6fbff; padding:12px 14px; border-radius:8px; margin:12px 0;}
+  .callout-important {border-left-color: var(--important); background:#fff5f5;}
+  .highlight {background:var(--highlight); padding:2px 4px; border-radius:4px;}
+  .action-list {counter-reset:item; list-style:none; padding-left:0; margin:14px 0;}
+  .action-list li {display:flex; align-items:flex-start; gap:10px; margin:10px 0;}
+  .action-list li::before {counter-increment:item; content:counter(item); flex:0 0 28px; height:28px; line-height:28px; text-align:center; color:#fff; background:var(--blue); border-radius:50%; font-weight:700;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="app-title">Navigator – Task HTML Converter <span class="badge">for K2</span></div>
+
+  <div class="grid">
+    <div class="panel">
+      <h3>Editor</h3>
+      <div class="toolbar">
+        <button class="btn" onclick="formatBlock('h2')">H2</button>
+        <button class="btn" onclick="formatBlock('h3')">H3</button>
+        <button class="btn" onclick="document.execCommand('bold',false,null)"><b>B</b></button>
+        <button class="btn" onclick="document.execCommand('italic',false,null)"><i>I</i></button>
+        <button class="btn" onclick="document.execCommand('underline',false,null)"><u>U</u></button>
+        <button class="btn" onclick="document.execCommand('insertUnorderedList',false,null)">• List</button>
+        <button class="btn" onclick="document.execCommand('insertOrderedList',false,null)">1. List</button>
+        <button class="btn" onclick="createLink()">Link</button>
+        <button class="btn" onclick="insertCallout(false)">Note</button>
+        <button class="btn" onclick="insertCallout(true)">Important</button>
+        <button class="btn" onclick="wrapSelection('<span class=\'highlight\'>','</span>')">Highlight</button>
+        <button class="btn" onclick="insertActionList()">Action list</button>
+        <button class="btn" onclick="insertSubheading()">Subheading</button>
+        <button class="btn" onclick="insertDivider()">Divider</button>
+      </div>
+      <div id="editor" class="editor" contenteditable="true"></div>
+      <div class="inner">
+        <div class="footer-actions">
+          <button class="btn" onclick="generateHTML()">Generate HTML</button>
+          <button class="btn" onclick="clearEditor()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Live Preview</h3>
+      <div class="preview-box">
+        <div id="preview"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sections Panel -->
+  <div class="panel" style="margin-top:24px;">
+    <h3>Sections</h3>
+    <div class="inner">
+      <div class="settings" style="grid-template-columns:repeat(4,minmax(0,1fr));">
+        <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="secPurpose" checked /> Purpose</label>
+        <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="secGuidance" checked /> Guidance</label>
+        <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="secEvidence" checked /> Evidence to Attach</label>
+        <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="secLinks" checked /> Useful Links</label>
+      </div>
+      <div class="footer-actions" style="margin-top:12px;">
+        <button class="btn" onclick="buildSectionsIntoEditor(true)">Build sections (replace editor)</button>
+      </div>
+      <p class="hint">Select sections; you can delete any unwanted section directly in the editor.</p>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:24px;">
+    <h3>Generated HTML (snippet for K2)</h3>
+    <div class="inner">
+      <textarea id="output" class="code" spellcheck="false"></textarea>
+      <div class="footer-actions">
+        <button class="btn" onclick="copyOutput()">Copy to clipboard</button>
+        <button class="btn" onclick="downloadSnippet()">Download .html</button>
+      </div>
+      <p class="hint">Snippet excludes <code>&lt;html&gt;</code>/<code>&lt;head&gt;</code>/<code>&lt;body&gt;</code>. Paste straight into K2.</p>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:24px;">
+    <h3>Settings</h3>
+    <div class="inner">
+      <div class="settings">
+        <div><label>Header title</label><input type="text" id="titleText" value="Navigator" /></div>
+        <div><label>Container width (px or %)</label><input type="text" id="containerWidth" value="100%" /></div>
+        <div><label>Brand blue</label><input type="color" id="blue" value="#0B4E87" /></div>
+        <div><label>Text colour</label><input type="color" id="textColour" value="#333333" /></div>
+        <div><label>Accent 1 (yellow)</label><input type="color" id="accent1" value="#FFC400" /></div>
+        <div><label>Accent 2 (green)</label><input type="color" id="accent2" value="#2EB872" /></div>
+        <div><label>Accent 3 (pink)</label><input type="color" id="accent3" value="#E0007A" /></div>
+        <div><label>Accent 4 (teal)</label><input type="color" id="accent4" value="#00A1C6" /></div>
+        <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="includeStyle" checked />
+          <label for="includeStyle">Include a small <code>&lt;style&gt;</code> block. Uncheck to force inline-only styles.</label>
+        </div>
+      </div>
+      <div class="footer-actions" style="margin-top:12px;">
+        <button class="btn" onclick="generateHTML()">Apply settings & regenerate</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function formatBlock(tag){ document.execCommand('formatBlock', false, tag); }
+function createLink(){ const url = prompt('Enter URL:'); if(url){ document.execCommand('createLink', false, url);} }
+function wrapSelection(startTag, endTag){ const sel=window.getSelection(); if(!sel||sel.rangeCount===0) return; const range=sel.getRangeAt(0); const frag=range.extractContents(); const wrapper=document.createElement('span'); wrapper.innerHTML=startTag+frag.textContent+endTag; range.insertNode(wrapper);} 
+function insertCallout(important=false){ const div=document.createElement('div'); div.className=important?'callout callout-important':'callout'; div.innerHTML=important?'<strong>Important:</strong> Replace with your message.':'<strong>Note:</strong> Replace with your note.'; insertNode(div);} 
+function insertActionList(){ const ol=document.createElement('ol'); ol.className='action-list'; ol.innerHTML='<li>First action</li><li>Second action</li><li>Third action</li>'; insertNode(ol);} 
+function insertSubheading(){ const sh=document.createElement('div'); sh.className='subheading'; sh.textContent='Subheading'; insertNode(sh);} 
+function insertDivider(){ const d=document.createElement('div'); d.className='divider'; insertNode(d);} 
+function insertNode(node){ const editor=document.getElementById('editor'); const sel=window.getSelection(); if(sel&&sel.rangeCount>0){ const range=sel.getRangeAt(0); range.collapse(false); range.insertNode(node);} else { editor.appendChild(node);} }
+function clearEditor(){ document.getElementById('editor').innerHTML=''; }
+
+function currentPalette(){ return { blue:document.getElementById('blue').value||'#0B4E87', text:document.getElementById('textColour').value||'#333333', a1:document.getElementById('accent1').value||'#FFC400', a2:document.getElementById('accent2').value||'#2EB872', a3:document.getElementById('accent3').value||'#E0007A', a4:document.getElementById('accent4').value||'#00A1C6' }; }
+
+function buildHeader(title, pal){
+  return '<div style="background:'+pal.blue+';color:#fff;padding:18px 22px;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:12px;">\
+      <div style="font-weight:800;font-size:22px;letter-spacing:.2px;">'+title+'</div>\
+    </div>\
+    <div style="display:flex;height:6px;">\
+      <span style="background:'+currentPalette().a1+';width:24%"></span>\
+      <span style="background:'+currentPalette().a2+';width:24%"></span>\
+      <span style="background:'+currentPalette().a3+';width:24%"></span>\
+      <span style="background:'+currentPalette().a4+';width:28%"></span>\
+    </div>';
+}
+
+function normaliseContent(html){ html=html.replace(/contenteditable=\"true\"/g,''); html=html.replace(/<b>/g,'<strong>').replace(/<\/b>/g,'<\/strong>'); html=html.replace(/<i>/g,'<em>').replace(/<\/i>/g,'<\/em>'); return html; }
+
+function getSectionSelections(){ return { purpose:document.getElementById('secPurpose').checked, guidance:document.getElementById('secGuidance').checked, evidence:document.getElementById('secEvidence').checked, links:document.getElementById('secLinks').checked }; }
+function buildSectionsHTML(sel){
+  let parts=[];
+  if(sel.purpose){ parts.push('<div class="subheading">Purpose</div>'); parts.push('<p>State the purpose of this task clearly and concisely — what outcome is required and why it matters.</p>'); }
+  if(sel.guidance){ parts.push('<div class="subheading">Guidance</div>'); parts.push('\n      <ol class="action-list">\n        <li>Provide step-by-step actions or standards to follow.</li>\n        <li>Clarify responsibilities and any timing expectations.</li>\n        <li>Use plain language and keep it actionable.</li>\n      </ol>'); parts.push('<div class="callout"><strong>Note:</strong> If steps differ by site type, add a short subheading for each variant.</div>'); }
+  if(sel.evidence){ parts.push('<div class="subheading">Evidence to Attach</div>'); parts.push('<ul>\n      <li>Upload supporting documents (e.g., supplier confirmation, reports, or photos).</li>\n      <li>Ensure filenames are descriptive and include date (YYYY-MM-DD).</li>\n      <li>Confirm evidence aligns to this task (no unrelated attachments).</li>\n    </ul>'); parts.push('<div class="callout callout-important"><strong>Important:</strong> Remove any personal data that is not required for this task.</div>'); }
+  if(sel.links){ parts.push('<div class="subheading">Useful Links</div>'); parts.push('<ul>\n      <li><a href="#">Policy / SOP</a></li>\n      <li><a href="#">Template or checklist</a></li>\n      <li><a href="#">Training or how-to</a></li>\n    </ul>'); }
+  return parts.join('');
+}
+function buildSectionsIntoEditor(replace){ const sel=getSectionSelections(); const h=buildSectionsHTML(sel); const editor=document.getElementById('editor'); if(replace){ editor.innerHTML=h; } else { editor.insertAdjacentHTML('beforeend', h);} generateHTML(); }
+
+function addInlineMarkers(html){
+  const container=document.createElement('div'); container.innerHTML=html;
+  const lists=container.querySelectorAll('ol.action-list');
+  lists.forEach((ol)=>{ let i=1; ol.querySelectorAll('li').forEach((li)=>{ if(li.querySelector('span._marker')) return; const marker=document.createElement('span'); marker.className='_marker'; marker.textContent=i++; marker.setAttribute('style','display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;height:28px;line-height:28px;text-align:center;color:#fff;background:'+ currentPalette().blue +';border-radius:50%;font-weight:700;margin-right:10px;'); li.insertBefore(marker, li.firstChild); }); });
+  return container.innerHTML;
+}
+
+function generateHTML(){
+  const title=document.getElementById('titleText').value||'Navigator';
+  const pal=currentPalette();
+  const width=document.getElementById('containerWidth').value||'100%';
+  const includeStyle=document.getElementById('includeStyle').checked;
+  let editorHtml=normaliseContent(document.getElementById('editor').innerHTML);
+  if(!includeStyle){ editorHtml=addInlineMarkers(editorHtml); }
+  const header=buildHeader(title, pal);
+  const body='<div style="background:#fff;border-radius:0 0 12px 12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:20px;">'+editorHtml+'</div>';
+  const container='<div style="font-family:'+"'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif"+';color:'+pal.text+';max-width:'+width+';">'+header+body+'</div>';
+  let styleBlock='';
+  if(includeStyle){ styleBlock='<style>.callout{border-left:4px solid #0B74C9;background:#f6fbff;padding:12px 14px;border-radius:8px;margin:12px 0;}.callout.callout-important{border-left-color:#C9362B;background:#fff5f5;}.highlight{background:#FFF6BF;padding:2px 4px;border-radius:4px;}.action-list{counter-reset:item;list-style:none;padding-left:0;margin:14px 0;}.action-list li{display:flex;align-items:flex-start;gap:10px;margin:10px 0;}.action-list li::before{counter-increment:item;content:counter(item);flex:0 0 28px;height:28px;line-height:28px;text-align:center;color:#fff;background:'+ pal.blue +';border-radius:50%;font-weight:700;}.subheading{font-weight:700;color:#1f2a44;margin-top:18px;margin-bottom:8px;}.divider{height:1px;background:#e8eaec;margin:12px 0;}</style>'; }
+  const snippet = styleBlock + container;
+  document.getElementById('output').value=snippet;
+  document.getElementById('preview').innerHTML=container;
+}
+
+function copyOutput(){ const ta=document.getElementById('output'); ta.select(); document.execCommand('copy'); }
+function downloadSnippet(){ const blob=new Blob([document.getElementById('output').value], {type:'text/html'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='navigator-task-html-converter.html'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('secPurpose').checked=true;
+  document.getElementById('secGuidance').checked=true;
+  document.getElementById('secEvidence').checked=true;
+  document.getElementById('secLinks').checked=true;
+  buildSectionsIntoEditor(true);
+});
+</script>
+</body>
+</html>
